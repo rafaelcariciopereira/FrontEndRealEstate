@@ -25,10 +25,71 @@ function fmtData(iso: string) {
   }
 }
 
+function StatusBadge({ imovel }: { imovel: Imovel }) {
+  const badges: React.ReactNode[] = [];
+
+  switch (imovel._status) {
+    case 'novo':
+      badges.push(
+        <span key="status" className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          Novo
+        </span>
+      );
+      break;
+    case 'ativo':
+      badges.push(
+        <span key="status" className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+          </svg>
+          Ativo
+        </span>
+      );
+      break;
+    case 'desatualizado':
+      badges.push(
+        <span key="status" className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          Desatualizado
+        </span>
+      );
+      break;
+    case 'encalhado':
+      badges.push(
+        <span key="status" className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+          </svg>
+          Encalhado · {imovel._idadeDias} dias
+        </span>
+      );
+      break;
+  }
+
+  if (imovel._atualizacaoSuspeita) {
+    badges.push(
+      <span key="suspeito" className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        Atualização suspeita
+      </span>
+    );
+  }
+
+  return <>{badges}</>;
+}
+
 export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
   const [descricaoAberta, setDescricaoAberta] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const isNovo = imovel._idadeDias < 7;
+  const temAnunciante = !!(imovel.anunciante_nome || imovel.anunciante_tipo);
 
   return (
     <article
@@ -38,33 +99,31 @@ export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
           : 'border-slate-200'
       }`}
     >
+      {/* Foto */}
+      <div className="aspect-video w-full bg-slate-100 relative overflow-hidden">
+        {imovel.foto_url && !imgError ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imovel.foto_url}
+            alt={imovel.titulo}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+        )}
+      </div>
+
       <div className="p-4">
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {imovel._encalhado && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-              Encalhado +{imovel._idadeDias} dias
-            </span>
-          )}
-          {imovel._atualizacaoSuspeita && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Atualização suspeita
-            </span>
-          )}
-          {isNovo && !imovel._encalhado && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Novo
-            </span>
-          )}
+          <StatusBadge imovel={imovel} />
           {destaque && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600 text-white rounded-full text-xs font-medium">
               Melhor R$/m²
@@ -78,10 +137,15 @@ export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
         </h3>
 
         {/* Endereço */}
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-slate-500 mb-1">
           {imovel._rua || imovel.endereco}
-          {imovel.bairro ? ` · ${imovel.bairro}` : ''}
+          {imovel._bairro ? ` · ${imovel._bairro}` : ''}
         </p>
+        {imovel._cep && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 mb-2 bg-slate-100 text-slate-600 rounded text-xs font-mono font-medium">
+            CEP {imovel._cep}
+          </span>
+        )}
 
         {/* Preço */}
         <div className="flex items-end justify-between mb-3">
@@ -177,6 +241,24 @@ export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
               <p className="mt-2 text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
                 {imovel.descricao}
               </p>
+            )}
+          </div>
+        )}
+
+        {/* Anunciante */}
+        {temAnunciante && (
+          <div className="border-t border-slate-100 pt-2 mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            {imovel.anunciante_tipo && (
+              <span className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 font-medium">
+                {imovel.anunciante_tipo}
+              </span>
+            )}
+            {imovel.anunciante_nome && (
+              <span className="truncate">{imovel.anunciante_nome}</span>
             )}
           </div>
         )}

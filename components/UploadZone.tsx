@@ -3,13 +3,15 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { parseCSV } from '@/lib/csv';
+import { enriquecerCEPs } from '@/lib/viacep';
 import { Imovel } from '@/lib/types';
 
 export default function UploadZone() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState<{ nome: string; total: number; imoveis: Imovel[] } | null>(null);
+  const [preview, setPreview] = useState<{ nome: string; total: number; imoveis: Imovel[]; enriquecendo: boolean } | null>(null);
+  const [cepProgress, setCepProgress] = useState<{ atual: number; total: number } | null>(null);
   const [error, setError] = useState('');
   const [parsing, setParsing] = useState(false);
 
@@ -52,11 +54,19 @@ export default function UploadZone() {
           setParsing(false);
           return;
         }
-        setPreview({ nome: file.name, total: imoveis.length, imoveis });
+        setPreview({ nome: file.name, total: imoveis.length, imoveis, enriquecendo: true });
+        setParsing(false);
+
+        enriquecerCEPs(imoveis, (atual, total) => {
+          setCepProgress({ atual, total });
+        }).then(imoveisComCEP => {
+          setPreview(p => p ? { ...p, imoveis: imoveisComCEP, enriquecendo: false } : null);
+          setCepProgress(null);
+        });
       } catch {
         setError('Erro ao processar o CSV. Verifique o formato do arquivo.');
+        setParsing(false);
       }
-      setParsing(false);
     };
     reader.readAsText(file, 'UTF-8');
   }
@@ -101,12 +111,25 @@ export default function UploadZone() {
           </div>
         </div>
 
+        {/* Progresso CEP */}
+        {preview.enriquecendo && (
+          <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
+            <svg className="w-3.5 h-3.5 text-blue-500 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            {cepProgress
+              ? `Buscando CEPs... ${cepProgress.atual}/${cepProgress.total} logradouros`
+              : 'Buscando CEPs...'}
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={handleConfirm}
             className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition text-sm"
           >
-            Analisar imóveis
+            {preview.enriquecendo ? 'Analisar (CEPs em andamento)' : 'Analisar imóveis'}
           </button>
           <button
             onClick={handleCancel}

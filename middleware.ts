@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getIronSession } from 'iron-session';
-import { sessionOptions, SessionData } from '@/lib/session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes
   if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
-  const response = NextResponse.next();
-  const session = await getIronSession<SessionData>(request, response, sessionOptions);
+  const sessionCookie = request.cookies.get('painel-imoveis-session');
 
-  if (!session.user?.isLoggedIn) {
+  if (!sessionCookie) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

@@ -17,13 +17,16 @@ const TIPOS = ['Apartamento', 'Casa', 'Studio', 'Kitnet', 'Cobertura', 'Outro'];
 export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, totalFiltrados }: FiltrosProps) {
   const [aberto, setAberto] = useState(true);
 
-  const bairros = Array.from(new Set(imoveis.map(i => i.bairro).filter(Boolean))).sort();
+  const bairros = Array.from(new Set(imoveis.map(i => i._bairro).filter(Boolean))).sort();
   const ruas = Array.from(new Set(
     imoveis
-      .filter(i => !filtros.bairro || i.bairro === filtros.bairro)
+      .filter(i => !filtros.bairro || i._bairro === filtros.bairro)
       .map(i => i._rua)
       .filter(Boolean)
   )).sort();
+  const tiposAnunciante = Array.from(
+    new Set(imoveis.map(i => i.anunciante_tipo).filter(Boolean))
+  ).sort() as string[];
 
   function set(key: keyof FiltrosState, value: string | number) {
     const next = { ...filtros, [key]: value };
@@ -31,16 +34,34 @@ export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, t
     onFiltros(next);
   }
 
+  const corretoras = Array.from(
+    new Set(imoveis.map(i => i.anunciante_nome).filter(Boolean))
+  ).sort() as string[];
+
+  function toggleCorretora(nome: string) {
+    const atuais = filtros.anunciantesAtivos ?? corretoras;
+    const novas = atuais.includes(nome)
+      ? atuais.filter(c => c !== nome)
+      : [...atuais, nome];
+    onFiltros({ ...filtros, anunciantesAtivos: novas.length === corretoras.length ? null : novas });
+  }
+
+  function isChecked(nome: string): boolean {
+    return filtros.anunciantesAtivos === null || filtros.anunciantesAtivos.includes(nome);
+  }
+
   function limparFiltros() {
     onFiltros({
       bairro: '', rua: '', tipo: '', quartosMin: 0,
       precoMin: '', precoMax: '', pm2Max: '', status: 'todos',
+      anuncianteTipo: '', cep: '', anunciantesAtivos: null,
     });
   }
 
   const temFiltroAtivo = filtros.bairro || filtros.rua || filtros.tipo ||
     filtros.quartosMin > 0 || filtros.precoMin || filtros.precoMax ||
-    filtros.pm2Max || filtros.status !== 'todos';
+    filtros.pm2Max || filtros.status !== 'todos' ||
+    filtros.anuncianteTipo || filtros.cep || filtros.anunciantesAtivos !== null;
 
   const ordens: { key: OrdemType; label: string }[] = [
     { key: 'menor_preco', label: 'Menor preço' },
@@ -165,9 +186,11 @@ export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, t
                 className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="todos">Todos</option>
-                <option value="encalhado">Possível encalhado</option>
+                <option value="novo">Novo (≤7 dias)</option>
+                <option value="ativo">Ativo (8–30 dias)</option>
+                <option value="desatualizado">Desatualizado (31–60 dias)</option>
+                <option value="encalhado">Encalhado (&gt;60 dias)</option>
                 <option value="suspeito">Atualização suspeita</option>
-                <option value="recente">Recente (&lt;30 dias)</option>
               </select>
             </div>
 
@@ -206,7 +229,56 @@ export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, t
                 className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Anunciante tipo */}
+            {tiposAnunciante.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Anunciante</label>
+                <select
+                  value={filtros.anuncianteTipo}
+                  onChange={e => set('anuncianteTipo', e.target.value)}
+                  className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Todos</option>
+                  {tiposAnunciante.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* CEP */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">CEP (prefixo)</label>
+              <input
+                type="text"
+                placeholder="Ex: 22041"
+                value={filtros.cep}
+                onChange={e => set('cep', e.target.value)}
+                className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
+
+          {/* Corretoras */}
+          {corretoras.length > 0 && (
+            <div className="col-span-full">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Corretoras</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {corretoras.map(nome => (
+                  <label key={nome} className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={isChecked(nome)}
+                      onChange={() => toggleCorretora(nome)}
+                      className="w-3.5 h-3.5 rounded accent-blue-600 cursor-pointer"
+                    />
+                    <span className={`text-xs transition ${isChecked(nome) ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
+                      {nome}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {temFiltroAtivo && (
             <button

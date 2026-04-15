@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { Imovel, ImovelRaw } from './types';
+import { Imovel, ImovelRaw, StatusAnuncio } from './types';
 
 const MESES: Record<string, number> = {
   janeiro: 0, fevereiro: 1, março: 2, abril: 3, maio: 4, junho: 5,
@@ -62,8 +62,27 @@ function parseArea(area: string): number {
   return parseFloat(area.replace(',', '.')) || 0;
 }
 
+function normalizarCEP(cep: string): string {
+  if (!cep) return '';
+  const digits = cep.replace(/\D/g, '');
+  if (digits.length === 8) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return cep;
+}
+
+function extrairBairroDoEndereco(endereco: string): string {
+  // "Rua X, 123 - Bairro, Cidade - UF"
+  if (!endereco) return 'Não identificado';
+  const partes = endereco.split(' - ');
+  if (partes.length < 2) return 'Não identificado';
+  const bairro = partes[1].split(',')[0].trim();
+  return bairro || 'Não identificado';
+}
+
 export function parseCSV(content: string): Imovel[] {
-  const result = Papa.parse<ImovelRaw>(content, {
+  // Strip UTF-8 BOM if present (common in CSVs exported from Python/pandas)
+  const cleanContent = content.replace(/^\uFEFF/, '');
+
+  const result = Papa.parse<ImovelRaw>(cleanContent, {
     header: true,
     delimiter: ';',
     quoteChar: '"',
@@ -107,6 +126,15 @@ export function parseCSV(content: string): Imovel[] {
       _atualizacaoSuspeita = diffAtualizacao > 15;
     }
 
+    const _status: StatusAnuncio =
+      _idadeDias <= 7 ? 'novo' :
+      _idadeDias <= 30 ? 'ativo' :
+      _idadeDias <= 60 ? 'desatualizado' :
+      'encalhado';
+
+    const _bairro = row.bairro || extrairBairroDoEndereco(row.endereco);
+    const _cep = normalizarCEP(row.cep || '');
+
     return {
       ...row,
       _id: `imovel-${index}`,
@@ -120,6 +148,9 @@ export function parseCSV(content: string): Imovel[] {
       _idadeDias,
       _encalhado,
       _atualizacaoSuspeita,
+      _status,
+      _bairro,
+      _cep,
     };
   });
 }

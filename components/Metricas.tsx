@@ -25,10 +25,23 @@ export default function Metricas({ imoveis, filtrados }: MetricasProps) {
 
   const precoMedio = media(lista.filter(i => i._preco > 0).map(i => i._preco));
   const pm2Medio = media(lista.filter(i => i._pm2 > 0).map(i => i._pm2));
-  const encalhados = lista.filter(i => i._encalhado).length;
+
+  const novos = lista.filter(i => i._status === 'novo').length;
+  const ativos = lista.filter(i => i._status === 'ativo').length;
+  const desatualizados = lista.filter(i => i._status === 'desatualizado').length;
+  const encalhados = lista.filter(i => i._status === 'encalhado').length;
   const suspeitos = lista.filter(i => i._atualizacaoSuspeita).length;
 
-  const cards = [
+  const colorMap: Record<string, string> = {
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    purple: 'bg-purple-50 text-purple-600',
+    red: 'bg-red-50 text-red-600',
+    yellow: 'bg-amber-50 text-amber-600',
+    orange: 'bg-orange-50 text-orange-600',
+  };
+
+  const summaryCards = [
     {
       label: 'Total',
       value: fmt(lista.length),
@@ -65,11 +78,26 @@ export default function Metricas({ imoveis, filtrados }: MetricasProps) {
         </svg>
       ),
     },
+  ];
+
+  const statusCards = [
     {
-      label: 'Encalhados',
-      value: fmt(encalhados),
-      sub: `> 60 dias no mercado`,
-      color: 'red',
+      label: 'Novos',
+      value: fmt(novos),
+      sub: '≤ 7 dias no mercado',
+      color: 'green',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Ativos',
+      value: fmt(ativos),
+      sub: '8 a 30 dias',
+      color: 'blue',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -78,10 +106,34 @@ export default function Metricas({ imoveis, filtrados }: MetricasProps) {
       ),
     },
     {
+      label: 'Desatualizados',
+      value: fmt(desatualizados),
+      sub: '31 a 60 dias',
+      color: 'yellow',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Encalhados',
+      value: fmt(encalhados),
+      sub: '> 60 dias no mercado',
+      color: 'red',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+      ),
+    },
+    {
       label: 'Atualizações suspeitas',
       value: fmt(suspeitos),
       sub: 'possivelmente artificiais',
-      color: 'yellow',
+      color: 'orange',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -91,26 +143,27 @@ export default function Metricas({ imoveis, filtrados }: MetricasProps) {
     },
   ];
 
-  const colorMap: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    red: 'bg-red-50 text-red-600',
-    yellow: 'bg-amber-50 text-amber-600',
-  };
+  function Card({ card }: { card: typeof summaryCards[0] }) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${colorMap[card.color]}`}>
+          {card.icon}
+        </div>
+        <p className="text-2xl font-bold text-slate-800 leading-none">{card.value}</p>
+        <p className="text-xs text-slate-500 mt-1 font-medium">{card.label}</p>
+        <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-      {cards.map((card) => (
-        <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${colorMap[card.color]}`}>
-            {card.icon}
-          </div>
-          <p className="text-2xl font-bold text-slate-800 leading-none">{card.value}</p>
-          <p className="text-xs text-slate-500 mt-1 font-medium">{card.label}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
-        </div>
-      ))}
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        {summaryCards.map(card => <Card key={card.label} card={card} />)}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {statusCards.map(card => <Card key={card.label} card={card} />)}
+      </div>
     </div>
   );
 }

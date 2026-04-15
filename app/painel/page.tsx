@@ -11,22 +11,28 @@ import ModoRua from '@/components/ModoRua';
 const FILTROS_PADRAO: FiltrosState = {
   bairro: '', rua: '', tipo: '', quartosMin: 0,
   precoMin: '', precoMax: '', pm2Max: '', status: 'todos',
+  anuncianteTipo: '', cep: '', anunciantesAtivos: null,
 };
 
 const PAGE_SIZE = 30;
 
 function aplicarFiltros(imoveis: Imovel[], filtros: FiltrosState): Imovel[] {
   return imoveis.filter(i => {
-    if (filtros.bairro && i.bairro !== filtros.bairro) return false;
+    if (filtros.bairro && i._bairro !== filtros.bairro) return false;
     if (filtros.rua && i._rua !== filtros.rua) return false;
     if (filtros.tipo && i._tipo !== filtros.tipo) return false;
     if (filtros.quartosMin > 0 && parseInt(i.quartos) < filtros.quartosMin) return false;
     if (filtros.precoMin && i._preco < parseInt(filtros.precoMin)) return false;
     if (filtros.precoMax && i._preco > parseInt(filtros.precoMax)) return false;
     if (filtros.pm2Max && i._pm2 > parseInt(filtros.pm2Max)) return false;
-    if (filtros.status === 'encalhado' && !i._encalhado) return false;
+    if (filtros.status === 'novo' && i._status !== 'novo') return false;
+    if (filtros.status === 'ativo' && i._status !== 'ativo') return false;
+    if (filtros.status === 'desatualizado' && i._status !== 'desatualizado') return false;
+    if (filtros.status === 'encalhado' && i._status !== 'encalhado') return false;
     if (filtros.status === 'suspeito' && !i._atualizacaoSuspeita) return false;
-    if (filtros.status === 'recente' && i._idadeDias >= 30) return false;
+    if (filtros.anuncianteTipo && i.anunciante_tipo !== filtros.anuncianteTipo) return false;
+    if (filtros.cep && !i._cep.replace('-', '').startsWith(filtros.cep.replace('-', ''))) return false;
+    if (filtros.anunciantesAtivos !== null && !filtros.anunciantesAtivos.includes(i.anunciante_nome || '')) return false;
     return true;
   });
 }
