@@ -32,7 +32,7 @@ function aplicarFiltros(imoveis: Imovel[], filtros: FiltrosState): Imovel[] {
     if (filtros.status === 'suspeito' && !i._atualizacaoSuspeita) return false;
     if (filtros.anuncianteTipo && i.anunciante_tipo !== filtros.anuncianteTipo) return false;
     if (filtros.cep && !i._cep.replace('-', '').startsWith(filtros.cep.replace('-', ''))) return false;
-    if (filtros.anunciantesAtivos !== null && !filtros.anunciantesAtivos.includes(i.anunciante_nome || '')) return false;
+    if (filtros.anunciantesAtivos !== null && filtros.anunciantesAtivos.includes(i.anunciante_nome || '')) return false;
     return true;
   });
 }

@@ -130,22 +130,26 @@ export default function ImobiliariaFilter({
 
   const buscaDebounced = useDebounce(busca, 250);
 
-  /* Compute corretoras with quantity, sorted by count desc */
+  /* ── Corretoras: always derived from the full dataset ────────────────── */
   const corretoras = useMemo<Corretora[]>(() => {
     const contagem: Record<string, number> = {};
+
     for (const i of imoveis) {
       if (i.anunciante_nome) {
-        contagem[i.anunciante_nome] = (contagem[i.anunciante_nome] ?? 0) + 1;
+        contagem[i.anunciante_nome] =
+          (contagem[i.anunciante_nome] ?? 0) + 1;
       }
     }
+
     return Object.entries(contagem)
       .map(([nome, quantidade]) => ({ nome, quantidade }))
       .sort((a, b) => b.quantidade - a.quantidade);
-  }, [imoveis]);
+  }, [imoveis]);  /* ── Check ativo ───────────────────────────────────────────────────────── */
 
-  /* Whether a corretora is actively selected (exclude-mode: not in exclusion list) */
+  /* exclude-mode: item is checked when it is NOT in the exclusion list */
   const isChecked = useCallback(
-    (nome: string) => anunciantesAtivos === null || !anunciantesAtivos.includes(nome),
+    (nome: string) =>
+      anunciantesAtivos === null || !anunciantesAtivos.includes(nome),
     [anunciantesAtivos],
   );
 
@@ -159,8 +163,12 @@ export default function ImobiliariaFilter({
   const toggle = useCallback(
     (nome: string) => {
       if (anunciantesAtivos === null) {
+        // primeira seleção: cria filtro
         onChange([nome]);
-      } else if (anunciantesAtivos.includes(nome)) {
+        return;
+      }
+
+      if (anunciantesAtivos.includes(nome)) {
         const novas = anunciantesAtivos.filter(n => n !== nome);
         onChange(novas.length === 0 ? null : novas);
       } else {
