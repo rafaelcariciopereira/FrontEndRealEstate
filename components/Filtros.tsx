@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Imovel, FiltrosState, OrdemType } from '@/lib/types';
+import ImobiliariaFilter from './ImobiliariaFilter';
 
 interface FiltrosProps {
   imoveis: Imovel[];
@@ -32,22 +33,6 @@ export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, t
     const next = { ...filtros, [key]: value };
     if (key === 'bairro') next.rua = '';
     onFiltros(next);
-  }
-
-  const corretoras = Array.from(
-    new Set(imoveis.map(i => i.anunciante_nome).filter(Boolean))
-  ).sort() as string[];
-
-  function toggleCorretora(nome: string) {
-    const atuais = filtros.anunciantesAtivos ?? corretoras;
-    const novas = atuais.includes(nome)
-      ? atuais.filter(c => c !== nome)
-      : [...atuais, nome];
-    onFiltros({ ...filtros, anunciantesAtivos: novas.length === corretoras.length ? null : novas });
-  }
-
-  function isChecked(nome: string): boolean {
-    return filtros.anunciantesAtivos === null || filtros.anunciantesAtivos.includes(nome);
   }
 
   function limparFiltros() {
@@ -259,26 +244,11 @@ export default function Filtros({ imoveis, filtros, ordem, onFiltros, onOrdem, t
           </div>
 
           {/* Corretoras */}
-          {corretoras.length > 0 && (
-            <div className="col-span-full">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Corretoras</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {corretoras.map(nome => (
-                  <label key={nome} className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={isChecked(nome)}
-                      onChange={() => toggleCorretora(nome)}
-                      className="w-3.5 h-3.5 rounded accent-blue-600 cursor-pointer"
-                    />
-                    <span className={`text-xs transition ${isChecked(nome) ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
-                      {nome}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+          <ImobiliariaFilter
+            imoveis={imoveis}
+            anunciantesAtivos={filtros.anunciantesAtivos}
+            onChange={novoEstado => onFiltros({ ...filtros, anunciantesAtivos: novoEstado })}
+          />
 
           {temFiltroAtivo && (
             <button
