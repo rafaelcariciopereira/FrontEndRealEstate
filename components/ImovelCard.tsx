@@ -85,6 +85,74 @@ function StatusBadge({ imovel }: { imovel: Imovel }) {
   return <>{badges}</>;
 }
 
+function ScoreBadge({ imovel }: { imovel: Imovel }) {
+  const bd = imovel._scoreBreakdown;
+  if (!bd || bd.maximo === 0) return null;
+
+  const tooltipLines = [
+    bd.diasMercado > 0 ? `Dias no mercado: ${bd.diasMercado}pts` : null,
+    bd.particular > 0 ? `Particular: ${bd.particular}pts` : null,
+    bd.anuncioFraco > 0 ? `Anúncio fraco: ${bd.anuncioFraco}pts` : null,
+  ].filter(Boolean).join(' · ') || 'Sem pontos';
+
+  const cor =
+    bd.total >= bd.maximo * 0.66
+      ? 'bg-red-100 text-red-700 border-red-200'
+      : bd.total > 0
+        ? 'bg-amber-100 text-amber-700 border-amber-200'
+        : 'bg-slate-100 text-slate-500 border-slate-200';
+
+  return (
+    <span
+      title={`Score: ${bd.total}/${bd.maximo} pts · ${tooltipLines}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border cursor-help ${cor}`}
+    >
+      ★ {bd.total}/{bd.maximo}
+    </span>
+  );
+}
+
+function DeSvioBadge({ imovel }: { imovel: Imovel }) {
+  const d = imovel._desvio;
+  if (d == null) return null;
+
+  const abs = Math.abs(d.desvioPct);
+  const neutro = abs <= 5;
+
+  const tooltip = `Média do grupo: ${fmtMoeda(d.mediaPm2)}/m² · Este imóvel: ${fmtMoeda(imovel._pm2)}/m²`;
+
+  if (neutro) {
+    return (
+      <span
+        title={tooltip}
+        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-full text-xs font-medium cursor-help"
+      >
+        ≈ na média
+      </span>
+    );
+  }
+
+  if (d.desvioPct < 0) {
+    return (
+      <span
+        title={tooltip}
+        className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded-full text-xs font-medium cursor-help"
+      >
+        ▼ {abs}% abaixo
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title={tooltip}
+      className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-medium cursor-help"
+    >
+      ▲ {abs}% acima
+    </span>
+  );
+}
+
 export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
   const [descricaoAberta, setDescricaoAberta] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -129,6 +197,8 @@ export default function ImovelCard({ imovel, destaque }: ImovelCardProps) {
               Melhor R$/m²
             </span>
           )}
+          <ScoreBadge imovel={imovel} />
+          <DeSvioBadge imovel={imovel} />
         </div>
 
         {/* Título */}

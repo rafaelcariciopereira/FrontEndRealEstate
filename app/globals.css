@@ -33,6 +33,16 @@ body {
   border-radius: 3px;
 }
 
+/* Score flash animation — triggered via key remount in score cells */
+@keyframes scoreFlash {
+  0%   { background-color: #dbeafe; }
+  100% { background-color: transparent; }
+}
+.score-updated {
+  animation: scoreFlash 0.45s ease-out;
+  border-radius: 4px;
+}
+
 /* Accordion animation */
 details > summary {
   list-style: none;

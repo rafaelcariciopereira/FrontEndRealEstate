@@ -21,6 +21,38 @@ export interface ImovelRaw {
   cep?: string;
 }
 
+// ── Score ────────────────────────────────────────────────────────────────────
+
+export interface ScorePesos {
+  diasMercado: number;
+  particular: number;
+  anuncioFraco: number;
+}
+
+export const SCORE_PESOS_PADRAO: ScorePesos = {
+  diasMercado: 2,
+  particular: 2,
+  anuncioFraco: 2,
+};
+
+export interface ScoreBreakdown {
+  diasMercado: number;
+  particular: number;
+  anuncioFraco: number;
+  total: number;
+  maximo: number;
+}
+
+// ── Desvio ───────────────────────────────────────────────────────────────────
+
+export interface DesvioInfo {
+  mediaPm2: number;   // média do grupo (bairro + tipo)
+  desvioPct: number;  // positivo = acima, negativo = abaixo
+  nGrupo: number;     // tamanho do grupo
+}
+
+// ── Imovel ───────────────────────────────────────────────────────────────────
+
 export interface Imovel extends ImovelRaw {
   _id: string;
   _preco: number;
@@ -36,7 +68,12 @@ export interface Imovel extends ImovelRaw {
   _status: StatusAnuncio;
   _bairro: string; // resolved: from bairro field or extracted from endereco
   _cep: string;    // normalized CEP with hyphen
+  // Computed at runtime in painel page (optional so sessionStorage data still works)
+  _scoreBreakdown?: ScoreBreakdown;
+  _desvio?: DesvioInfo | null;
 }
+
+// ── Filtros ──────────────────────────────────────────────────────────────────
 
 export interface FiltrosState {
   bairro: string;
@@ -50,11 +87,17 @@ export interface FiltrosState {
   anuncianteTipo: string;
   cep: string;
   anunciantesAtivos: string[] | null; // null = todos selecionados
+  desvioMin: string; // % mínimo de desvio (permite negativo)
+  desvioMax: string; // % máximo de desvio (permite negativo)
 }
+
+// ── Ordem ────────────────────────────────────────────────────────────────────
 
 export type OrdemType =
   | 'menor_preco'
   | 'maior_preco'
   | 'menor_pm2'
   | 'mais_antigo'
-  | 'mais_recente';
+  | 'mais_recente'
+  | 'maior_score'
+  | 'menor_desvio';
